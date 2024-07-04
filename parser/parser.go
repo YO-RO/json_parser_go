@@ -71,6 +71,34 @@ var (
 	ErrSyntax error = errors.New("invalid syntax")
 )
 
+func analyzeStringToken(str string, firstQuotationIdx int) (ValueToken, int, error) {
+	// 直前に\がない"
+	// または 直前に\が偶数回連続している"
+	// `"`や`\\"`などがマッチ
+	//
+	// Capture Group 0 を全体のマッチだとすると、
+	// Quotation Mark(")はCapture Group 5
+	re := regexp.MustCompile(`(^|[^\\]|((^|[^\\])(\\\\)+))(")`)
+	matchedLastQuotationIdx :=
+		re.FindStringSubmatchIndex(str[firstQuotationIdx+1:])
+	if len(matchedLastQuotationIdx) == 0 {
+		return ValueToken{}, 0, ErrSyntax
+	}
+	// idxsはstr[firstQuotationIdx+1]からのインデックスであるためfirstQuotationIdx+1を足す
+	beginIdx := firstQuotationIdx
+	endIdx := firstQuotationIdx + 1 + matchedLastQuotationIdx[11]
+
+	value, err := strconv.Unquote(str[beginIdx:endIdx])
+	if err != nil {
+		return ValueToken{}, 0, ErrSyntax
+	}
+	token := ValueToken{
+		tokenType: String,
+		value:     value,
+	}
+	return token, endIdx, nil
+}
+
 func Analyze(d []byte) ([]Tokener, error) {
 	res := []Tokener{}
 
@@ -78,32 +106,11 @@ func Analyze(d []byte) ([]Tokener, error) {
 	for i := 0; i < len(inputStr); i++ {
 		switch inputStr[i] {
 		case '"':
-			// 直前に\がない"
-			// または 直前に\が偶数回連続している"
-			// `"`や`\\"`などがマッチ
-			//
-			// Capture Group 0 を全体のマッチだとすると、
-			// Quotation Mark(")はCapture Group 5
-			re := regexp.MustCompile(`(^|[^\\]|((^|[^\\])(\\\\)+))(")`)
-			lastQuotationIdx :=
-				re.FindStringSubmatchIndex(inputStr[i+1:])
-			if len(lastQuotationIdx) == 0 {
-				return nil, ErrSyntax
-			}
-			// idxsはinputStr[i+1]からのインデックスであるためi+1を足す
-			beginIdx := i
-			endIdx := i + 1 + lastQuotationIdx[11]
-
-			value, err := strconv.Unquote(inputStr[beginIdx:endIdx])
+			token, endIdx, err := analyzeStringToken(inputStr, i)
 			if err != nil {
-				return nil, ErrSyntax
-			}
-			token := ValueToken{
-				tokenType: String,
-				value:     value,
+				return nil, err
 			}
 			res = append(res, token)
-
 			i = endIdx - 1
 		}
 	}
