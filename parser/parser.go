@@ -72,7 +72,7 @@ var (
 	ErrSyntax error = errors.New("invalid syntax")
 )
 
-func analyzeStringToken(str string, firstQuotationIdx int) (ValueToken, int, error) {
+func extractStringAsToken(str string, startIdx int) (ValueToken, int, error) {
 	// 直前に\がない"
 	// または 直前に\が偶数回連続している"
 	// `"`や`\\"`などがマッチ
@@ -81,13 +81,13 @@ func analyzeStringToken(str string, firstQuotationIdx int) (ValueToken, int, err
 	// Quotation Mark(")はCapture Group 5
 	re := regexp.MustCompile(`(^|[^\\]|((^|[^\\])(\\\\)+))(")`)
 	matchedLastQuotationIdx :=
-		re.FindStringSubmatchIndex(str[firstQuotationIdx+1:])
+		re.FindStringSubmatchIndex(str[startIdx+1:])
 	if len(matchedLastQuotationIdx) == 0 {
 		return ValueToken{}, 0, ErrSyntax
 	}
 	// idxsはstr[firstQuotationIdx+1]からのインデックスであるためfirstQuotationIdx+1を足す
-	beginIdx := firstQuotationIdx
-	endIdx := firstQuotationIdx + 1 + matchedLastQuotationIdx[11]
+	beginIdx := startIdx
+	endIdx := startIdx + 1 + matchedLastQuotationIdx[11]
 
 	value, err := strconv.Unquote(str[beginIdx:endIdx])
 	if err != nil {
@@ -100,14 +100,14 @@ func analyzeStringToken(str string, firstQuotationIdx int) (ValueToken, int, err
 	return token, endIdx, nil
 }
 
-func analyzeNumberToken(str string, firstNumberIdx int) (ValueToken, int, error) {
+func extractNumberAsToken(str string, startIdx int) (ValueToken, int, error) {
 	var token ValueToken
 	re := regexp.MustCompile(`\d+(\.\d+)?`)
-	loc := re.FindStringSubmatchIndex(str[firstNumberIdx:])
+	loc := re.FindStringSubmatchIndex(str[startIdx:])
 	// 小数点以降のマッチはloc[2]からloc[3]
 	// loc[2] == -1 ならマッチしていないことになる
 	if loc[2] == -1 {
-		value, err := strconv.Atoi(str[firstNumberIdx : firstNumberIdx+loc[1]])
+		value, err := strconv.Atoi(str[startIdx : startIdx+loc[1]])
 		if err != nil {
 			// errorを埋め込みたくないため%v
 			return ValueToken{}, 0, fmt.Errorf("internal error: %v", err)
@@ -117,7 +117,7 @@ func analyzeNumberToken(str string, firstNumberIdx int) (ValueToken, int, error)
 			value:     value,
 		}
 	} else {
-		value, err := strconv.ParseFloat(str[firstNumberIdx:firstNumberIdx+loc[1]], 64)
+		value, err := strconv.ParseFloat(str[startIdx:startIdx+loc[1]], 64)
 		if err != nil {
 			// errorを埋め込みたくないため%v
 			return ValueToken{}, 0, fmt.Errorf("internal error: %v", err)
@@ -127,7 +127,7 @@ func analyzeNumberToken(str string, firstNumberIdx int) (ValueToken, int, error)
 			value:     value,
 		}
 	}
-	return token, firstNumberIdx + loc[1], nil
+	return token, startIdx + loc[1], nil
 }
 
 func Analyze(d []byte) ([]Tokener, error) {
@@ -137,14 +137,14 @@ func Analyze(d []byte) ([]Tokener, error) {
 	for i := 0; i < len(inputStr); i++ {
 		switch inputStr[i] {
 		case '"':
-			token, endIdx, err := analyzeStringToken(inputStr, i)
+			token, endIdx, err := extractStringAsToken(inputStr, i)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, token)
 			i = endIdx - 1
 		case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
-			token, endIdx, err := analyzeNumberToken(inputStr, i)
+			token, endIdx, err := extractNumberAsToken(inputStr, i)
 			if err != nil {
 				return nil, err
 			}
