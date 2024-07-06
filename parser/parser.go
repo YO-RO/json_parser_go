@@ -100,6 +100,36 @@ func analyzeStringToken(str string, firstQuotationIdx int) (ValueToken, int, err
 	return token, endIdx, nil
 }
 
+func analyzeNumberToken(str string, firstNumberIdx int) (ValueToken, int, error) {
+	var token ValueToken
+	re := regexp.MustCompile(`\d+(\.\d+)?`)
+	loc := re.FindStringSubmatchIndex(str[firstNumberIdx:])
+	// 小数点以降のマッチはloc[2]からloc[3]
+	// loc[2] == -1 ならマッチしていないことになる
+	if loc[2] == -1 {
+		value, err := strconv.Atoi(str[firstNumberIdx : firstNumberIdx+loc[1]])
+		if err != nil {
+			// errorを埋め込みたくないため%v
+			return ValueToken{}, 0, fmt.Errorf("internal error: %v", err)
+		}
+		token = ValueToken{
+			tokenType: Int,
+			value:     value,
+		}
+	} else {
+		value, err := strconv.ParseFloat(str[firstNumberIdx:firstNumberIdx+loc[1]], 64)
+		if err != nil {
+			// errorを埋め込みたくないため%v
+			return ValueToken{}, 0, fmt.Errorf("internal error: %v", err)
+		}
+		token = ValueToken{
+			tokenType: Float,
+			value:     value,
+		}
+	}
+	return token, firstNumberIdx + loc[1], nil
+}
+
 func Analyze(d []byte) ([]Tokener, error) {
 	res := []Tokener{}
 
@@ -114,34 +144,12 @@ func Analyze(d []byte) ([]Tokener, error) {
 			res = append(res, token)
 			i = endIdx - 1
 		case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
-			var token ValueToken
-			re := regexp.MustCompile(`\d+(\.\d+)?`)
-			loc := re.FindStringSubmatchIndex(inputStr[i:])
-			// 小数点以降のマッチはloc[2]からloc[3]
-			// loc[2] == -1 ならマッチしていないことになる
-			if loc[2] == -1 {
-				value, err := strconv.Atoi(inputStr[i : i+loc[1]])
-				if err != nil {
-					// errorを埋め込みたくないため%v
-					return nil, fmt.Errorf("internal error: %v", err)
-				}
-				token = ValueToken{
-					tokenType: Int,
-					value:     value,
-				}
-			} else {
-				value, err := strconv.ParseFloat(inputStr[i:i+loc[1]], 64)
-				if err != nil {
-					// errorを埋め込みたくないため%v
-					return nil, fmt.Errorf("internal error: %v", err)
-				}
-				token = ValueToken{
-					tokenType: Float,
-					value:     value,
-				}
+			token, endIdx, err := analyzeNumberToken(inputStr, i)
+			if err != nil {
+				return nil, err
 			}
 			res = append(res, token)
-			i = i + loc[1] - 1
+			i = endIdx - 1
 		}
 	}
 
