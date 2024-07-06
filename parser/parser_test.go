@@ -61,6 +61,44 @@ func TestIntAnalyzer(t *testing.T) {
 	}
 }
 
+func TestFloatAnalyzer(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		expectErr error
+		want      []parser.Tokener
+	}{
+		{
+			"一つのfloat",
+			"12.34",
+			nil,
+			[]parser.Tokener{floatToken(t, 12.34)},
+		},
+		{
+			"複数のfloat",
+			"12.34 56.78 90.12",
+			nil,
+			[]parser.Tokener{
+				floatToken(t, 12.34),
+				floatToken(t, 56.78),
+				floatToken(t, 90.12),
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := parser.Analyze([]byte(tc.input))
+			if !errors.Is(tc.expectErr, err) {
+				t.Errorf("err(%v) expects to be %v", err, tc.expectErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("parser.Analyze([]byte(%q)) == %v, want %v", tc.input, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestAnalyzer(t *testing.T) {
 	tests := []struct {
 		name      string
