@@ -23,6 +23,44 @@ func strToken(t *testing.T, value string) parser.ValueToken {
 	return parser.NewValueToken(parser.String, value)
 }
 
+func TestIntAnalyzer(t *testing.T) {
+	tests := []struct {
+		name      string
+		input     string
+		expectErr error
+		want      []parser.Tokener
+	}{
+		{
+			"一つの整数",
+			"123",
+			nil,
+			[]parser.Tokener{intToken(t, 123)},
+		},
+		{
+			"複数の整数",
+			"123 456 789",
+			nil,
+			[]parser.Tokener{
+				intToken(t, 123),
+				intToken(t, 456),
+				intToken(t, 789),
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := parser.Analyze([]byte(tc.input))
+			if !errors.Is(tc.expectErr, err) {
+				t.Errorf("err(%v) expects to be %v", err, tc.expectErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("parser.Analyze([]byte(%q)) == %v, want %v", tc.input, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestAnalyzer(t *testing.T) {
 	tests := []struct {
 		name      string
