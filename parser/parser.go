@@ -69,7 +69,8 @@ func (mt MarkToken) Value() (any, error) {
 }
 
 var (
-	ErrSyntax error = errors.New("invalid syntax")
+	ErrSyntax           error = errors.New("invalid syntax")
+	ErrUndefinedKeyword error = errors.New("undefined keyword")
 )
 
 func extractStringAsToken(str string, startIdx int) (ValueToken, int, error) {
@@ -130,6 +131,30 @@ func extractNumberAsToken(str string, startIdx int) (ValueToken, int, error) {
 	return token, startIdx + loc[1], nil
 }
 
+func extractBoolAsToken(str string, startIdx int) (ValueToken, int, error) {
+	// ?i: はcase insentive
+	// ?: はグループをキャプチャしない
+	re := regexp.MustCompile(`(?i:true|false)(?:[\s,:"{}\[\]]|$)`)
+	loc := re.FindStringSubmatchIndex(str[startIdx:])
+	if loc == nil {
+		return ValueToken{}, 0, ErrUndefinedKeyword
+	}
+	endIdx := startIdx + loc[1]
+
+	var value bool
+	if str[startIdx:endIdx] == "true" {
+		value = true
+	} else {
+		value = false
+	}
+
+	token := ValueToken{
+		tokenType: Bool,
+		value:     value,
+	}
+	return token, endIdx, nil
+}
+
 func Analyze(d []byte) ([]Tokener, error) {
 	res := []Tokener{}
 
@@ -145,6 +170,13 @@ func Analyze(d []byte) ([]Tokener, error) {
 			i = endIdx - 1
 		case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
 			token, endIdx, err := extractNumberAsToken(inputStr, i)
+			if err != nil {
+				return nil, err
+			}
+			res = append(res, token)
+			i = endIdx - 1
+		case 't', 'f':
+			token, endIdx, err := extractBoolAsToken(inputStr, i)
 			if err != nil {
 				return nil, err
 			}
