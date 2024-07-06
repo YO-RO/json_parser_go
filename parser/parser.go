@@ -106,7 +106,7 @@ func extractNumberAsToken(str string, startIdx int) (ValueToken, int, error) {
 	loc := re.FindStringSubmatchIndex(str[startIdx:])
 	// 小数点以降のマッチはloc[2]からloc[3]
 	// loc[2] == -1 ならマッチしていないことになる
-	if loc[2] == -1 {
+	if loc[2] == -1 /*整数なら*/ {
 		value, err := strconv.Atoi(str[startIdx : startIdx+loc[1]])
 		if err != nil {
 			// errorを埋め込みたくないため%v
@@ -116,7 +116,7 @@ func extractNumberAsToken(str string, startIdx int) (ValueToken, int, error) {
 			tokenType: Int,
 			value:     value,
 		}
-	} else {
+	} else /*floatなら*/ {
 		value, err := strconv.ParseFloat(str[startIdx:startIdx+loc[1]], 64)
 		if err != nil {
 			// errorを埋め込みたくないため%v
