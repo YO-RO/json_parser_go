@@ -46,6 +46,11 @@ func strToken(t *testing.T, value string) parser.ValueToken {
 	return parser.NewValueToken(parser.String, value)
 }
 
+func boolToken(t *testing.T, value bool) parser.ValueToken {
+	t.Helper()
+	return parser.NewValueToken(parser.Bool, value)
+}
+
 func TestIntAnalyzer(t *testing.T) {
 	tests := []testCase{
 		{
