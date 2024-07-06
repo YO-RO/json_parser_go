@@ -51,6 +51,30 @@ func boolToken(t *testing.T, value bool) parser.ValueToken {
 	return parser.NewValueToken(parser.Bool, value)
 }
 
+func TestBoolAnalyzer(t *testing.T) {
+	tests := []testCase{
+		{
+			"真",
+			"true",
+			nil,
+			[]parser.Tokener{boolToken(t, true)},
+		},
+		{
+			"偽",
+			"false",
+			nil,
+			[]parser.Tokener{boolToken(t, false)},
+		},
+		{
+			"定義されていないキーワード[trueeeee]",
+			"trueeeee",
+			parser.ErrUndefinedKeyword,
+			nil,
+		},
+	}
+	runTestCases(t, tests)
+}
+
 func TestIntAnalyzer(t *testing.T) {
 	tests := []testCase{
 		{
