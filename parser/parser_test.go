@@ -8,6 +8,29 @@ import (
 	"github.com/YO-RO/mini-parser-go/parser"
 )
 
+type testCase struct {
+	name      string
+	input     string
+	expectErr error
+	want      []parser.Tokener
+}
+
+func runTestCases(t *testing.T, tests []testCase) {
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := parser.Analyze([]byte(tc.input))
+			if !errors.Is(tc.expectErr, err) {
+				t.Errorf("err(%v) expects to be %v", err, tc.expectErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("parser.Analyze([]byte(%q)) == %v, want %v", tc.input, got, tc.want)
+			}
+		})
+	}
+
+}
+
 func intToken(t *testing.T, value int) parser.ValueToken {
 	t.Helper()
 	return parser.NewValueToken(parser.Int, value)
@@ -24,12 +47,7 @@ func strToken(t *testing.T, value string) parser.ValueToken {
 }
 
 func TestIntAnalyzer(t *testing.T) {
-	tests := []struct {
-		name      string
-		input     string
-		expectErr error
-		want      []parser.Tokener
-	}{
+	tests := []testCase{
 		{
 			"一つの整数",
 			"123",
@@ -47,27 +65,11 @@ func TestIntAnalyzer(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := parser.Analyze([]byte(tc.input))
-			if !errors.Is(tc.expectErr, err) {
-				t.Errorf("err(%v) expects to be %v", err, tc.expectErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("parser.Analyze([]byte(%q)) == %v, want %v", tc.input, got, tc.want)
-			}
-		})
-	}
+	runTestCases(t, tests)
 }
 
 func TestFloatAnalyzer(t *testing.T) {
-	tests := []struct {
-		name      string
-		input     string
-		expectErr error
-		want      []parser.Tokener
-	}{
+	tests := []testCase{
 		{
 			"一つのfloat",
 			"12.34",
@@ -85,27 +87,11 @@ func TestFloatAnalyzer(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := parser.Analyze([]byte(tc.input))
-			if !errors.Is(tc.expectErr, err) {
-				t.Errorf("err(%v) expects to be %v", err, tc.expectErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("parser.Analyze([]byte(%q)) == %v, want %v", tc.input, got, tc.want)
-			}
-		})
-	}
+	runTestCases(t, tests)
 }
 
-func TestAnalyzer(t *testing.T) {
-	tests := []struct {
-		name      string
-		input     string
-		expectErr error
-		want      []parser.Tokener
-	}{
+func TestStringAnalyzer(t *testing.T) {
+	tests := []testCase{
 		{
 			"空文字列",
 			`""`,
@@ -154,16 +140,5 @@ func TestAnalyzer(t *testing.T) {
 			nil,
 		},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := parser.Analyze([]byte(tc.input))
-			if !errors.Is(tc.expectErr, err) {
-				t.Errorf("err(%s) expects to be %s", err, tc.expectErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tc.want) {
-				t.Errorf("parser.Analyze([]byte(%s)) == %s, want %s", tc.input, got, tc.want)
-			}
-		})
-	}
+	runTestCases(t, tests)
 }
