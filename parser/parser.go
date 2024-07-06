@@ -114,16 +114,31 @@ func Analyze(d []byte) ([]Tokener, error) {
 			res = append(res, token)
 			i = endIdx - 1
 		case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
-			re := regexp.MustCompile(`\d+`)
-			loc := re.FindStringIndex(inputStr[i:])
-			value, err := strconv.Atoi(inputStr[i : i+loc[1]])
-			if err != nil {
-				// errorを埋め込みたくないため%v
-				return nil, fmt.Errorf("internal error: %v", err)
-			}
-			token := ValueToken{
-				tokenType: Int,
-				value:     value,
+			var token ValueToken
+			re := regexp.MustCompile(`\d+(\.\d+)?`)
+			loc := re.FindStringSubmatchIndex(inputStr[i:])
+			// 小数点以降のマッチはloc[2]からloc[3]
+			// loc[2] == -1 ならマッチしていないことになる
+			if loc[2] == -1 {
+				value, err := strconv.Atoi(inputStr[i : i+loc[1]])
+				if err != nil {
+					// errorを埋め込みたくないため%v
+					return nil, fmt.Errorf("internal error: %v", err)
+				}
+				token = ValueToken{
+					tokenType: Int,
+					value:     value,
+				}
+			} else {
+				value, err := strconv.ParseFloat(inputStr[i:i+loc[1]], 64)
+				if err != nil {
+					// errorを埋め込みたくないため%v
+					return nil, fmt.Errorf("internal error: %v", err)
+				}
+				token = ValueToken{
+					tokenType: Float,
+					value:     value,
+				}
 			}
 			res = append(res, token)
 			i = i + loc[1] - 1
