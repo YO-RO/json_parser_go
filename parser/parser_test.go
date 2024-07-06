@@ -8,6 +8,16 @@ import (
 	"github.com/YO-RO/mini-parser-go/parser"
 )
 
+func intToken(t *testing.T, value int) parser.ValueToken {
+	t.Helper()
+	return parser.NewValueToken(parser.Int, value)
+}
+
+func floatToken(t *testing.T, value float64) parser.ValueToken {
+	t.Helper()
+	return parser.NewValueToken(parser.Float, value)
+}
+
 func strToken(t *testing.T, value string) parser.ValueToken {
 	t.Helper()
 	return parser.NewValueToken(parser.String, value)
