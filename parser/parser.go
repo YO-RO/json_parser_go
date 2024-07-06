@@ -77,20 +77,15 @@ func extractStringAsToken(str string, startIdx int) (ValueToken, int, error) {
 	// 直前に\がない"
 	// または 直前に\が偶数回連続している"
 	// `"`や`\\"`などがマッチ
-	//
-	// Capture Group 0 を全体のマッチだとすると、
-	// Quotation Mark(")はCapture Group 5
-	re := regexp.MustCompile(`(^|[^\\]|((^|[^\\])(\\\\)+))(")`)
-	matchedLastQuotationIdx :=
-		re.FindStringSubmatchIndex(str[startIdx+1:])
-	if len(matchedLastQuotationIdx) == 0 {
+	re := regexp.MustCompile(`(?:^|[^\\]|((^|[^\\])(\\\\)+))(")`)
+	loc := re.FindStringSubmatchIndex(str[startIdx+1:])
+	if loc == nil {
 		return ValueToken{}, 0, ErrSyntax
 	}
 	// idxsはstr[firstQuotationIdx+1]からのインデックスであるためfirstQuotationIdx+1を足す
-	beginIdx := startIdx
-	endIdx := startIdx + 1 + matchedLastQuotationIdx[11]
+	endIdx := startIdx + 1 + loc[1]
 
-	value, err := strconv.Unquote(str[beginIdx:endIdx])
+	value, err := strconv.Unquote(str[startIdx:endIdx])
 	if err != nil {
 		return ValueToken{}, 0, ErrSyntax
 	}
