@@ -68,7 +68,25 @@ func TestBoolAnalyzer(t *testing.T) {
 		{
 			"定義されていないキーワード[trueeeee]",
 			"trueeeee",
-			parser.ErrUndefinedKeyword,
+			parser.ErrUndefinedSymbol,
+			nil,
+		},
+		{
+			"定義されていないキーワード[atrue]",
+			"atrue",
+			parser.ErrUndefinedSymbol,
+			nil,
+		},
+		{
+			"定義されていないキーワード[afalse]",
+			"afalse",
+			parser.ErrUndefinedSymbol,
+			nil,
+		},
+		{
+			"定義されていないキーワード[true111]",
+			"true111",
+			parser.ErrUndefinedSymbol,
 			nil,
 		},
 	}

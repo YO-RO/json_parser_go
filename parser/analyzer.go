@@ -69,9 +69,13 @@ func (mt MarkToken) Value() (any, error) {
 }
 
 var (
-	ErrSyntax           error = errors.New("invalid syntax")
-	ErrUndefinedKeyword error = errors.New("undefined keyword")
+	ErrSyntax          error = errors.New("invalid syntax")
+	ErrUndefinedSymbol error = errors.New("undefined symbol")
 )
+
+func mayBeString(str string, i int) bool {
+	return str[i] == '"'
+}
 
 func extractStringAsToken(str string, startIdx int) (ValueToken, int, error) {
 	// 直前に\がない"
@@ -94,6 +98,11 @@ func extractStringAsToken(str string, startIdx int) (ValueToken, int, error) {
 		value:     value,
 	}
 	return token, endIdx, nil
+}
+
+func isNumber(str string, i int) bool {
+	matched, _ := regexp.MatchString(`\d`, str[i:i+1])
+	return matched
 }
 
 func extractNumberAsToken(str string, startIdx int) (ValueToken, int, error) {
@@ -126,13 +135,17 @@ func extractNumberAsToken(str string, startIdx int) (ValueToken, int, error) {
 	return token, startIdx + loc[1], nil
 }
 
+func mayBeBool(str string, i int) bool {
+	return str[i] == 't' || str[i] == 'f'
+}
+
 func extractBoolAsToken(str string, startIdx int) (ValueToken, int, error) {
 	// ?i: はcase insentive
 	// ?: はグループをキャプチャしない
 	re := regexp.MustCompile(`(?i:true|false)(?:[\s,:"{}\[\]]|$)`)
 	loc := re.FindStringSubmatchIndex(str[startIdx:])
 	if loc == nil {
-		return ValueToken{}, 0, ErrUndefinedKeyword
+		return ValueToken{}, 0, ErrUndefinedSymbol
 	}
 	endIdx := startIdx + loc[1]
 
@@ -150,33 +163,52 @@ func extractBoolAsToken(str string, startIdx int) (ValueToken, int, error) {
 	return token, endIdx, nil
 }
 
+func isSpace(str string, i int) bool {
+	matched, _ := regexp.MatchString(`\s`, str[i:i+1])
+	return matched
+}
+
+func skipSpaces(str string, startIdx int) int {
+	re := regexp.MustCompile(`\s+`)
+	loc := re.FindStringIndex(str[startIdx:])
+	if loc == nil {
+		return startIdx
+	}
+	return startIdx + loc[1]
+}
+
 func Analyze(d []byte) ([]Tokener, error) {
 	res := []Tokener{}
 
 	inputStr := string(d)
 	for i := 0; i < len(inputStr); i++ {
-		switch inputStr[i] {
-		case '"':
+		switch {
+		case mayBeString(inputStr, i):
 			token, endIdx, err := extractStringAsToken(inputStr, i)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, token)
 			i = endIdx - 1
-		case '1', '2', '3', '4', '5', '6', '7', '8', '9', '0':
+		case isNumber(inputStr, i):
 			token, endIdx, err := extractNumberAsToken(inputStr, i)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, token)
 			i = endIdx - 1
-		case 't', 'f':
+		case mayBeBool(inputStr, i):
 			token, endIdx, err := extractBoolAsToken(inputStr, i)
 			if err != nil {
 				return nil, err
 			}
 			res = append(res, token)
 			i = endIdx - 1
+		case isSpace(inputStr, i):
+			endIdx := skipSpaces(inputStr, i)
+			i = endIdx - 1
+		default:
+			return nil, ErrUndefinedSymbol
 		}
 	}
 
