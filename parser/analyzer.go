@@ -20,6 +20,7 @@ const (
 	LeftCurlyBracket
 	RightCurlyBracket
 	Colon
+	Comma
 )
 
 var (
@@ -163,6 +164,36 @@ func extractBoolAsToken(str string, startIdx int) (ValueToken, int, error) {
 	return token, endIdx, nil
 }
 
+func isMark(str string, i int) bool {
+	matched, _ := regexp.MatchString(`[,:\[\]{}]`, str[i:i+1])
+	return matched
+}
+
+func mustExtractMark(str string, startIdx int) (MarkToken, int) {
+	re := regexp.MustCompile(`[,:\[\]{}]`)
+	mark := re.FindString(str[startIdx:])
+	if mark == "" {
+		panic("it should be called in case isMark() is true")
+	}
+	endIdx := startIdx + 1 // markは1文字
+	switch mark {
+	case ",":
+		return MarkToken{tokenType: Comma}, endIdx
+	case ":":
+		return MarkToken{tokenType: Colon}, endIdx
+	case "[":
+		return MarkToken{tokenType: LeftSquareBracket}, endIdx
+	case "]":
+		return MarkToken{tokenType: RightSquareBracket}, endIdx
+	case "{":
+		return MarkToken{tokenType: LeftCurlyBracket}, endIdx
+	case "}":
+		return MarkToken{tokenType: RightCurlyBracket}, endIdx
+	default:
+		panic("out of range, mark must match one of ,:[]{}")
+	}
+}
+
 func isSpace(str string, i int) bool {
 	matched, _ := regexp.MatchString(`\s`, str[i:i+1])
 	return matched
@@ -202,6 +233,10 @@ func Analyze(d []byte) ([]Tokener, error) {
 			if err != nil {
 				return nil, err
 			}
+			res = append(res, token)
+			i = endIdx - 1
+		case isMark(inputStr, i):
+			token, endIdx := mustExtractMark(inputStr, i)
 			res = append(res, token)
 			i = endIdx - 1
 		case isSpace(inputStr, i):
