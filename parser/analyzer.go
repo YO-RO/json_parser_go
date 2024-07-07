@@ -106,34 +106,45 @@ func isNumber(str string, i int) bool {
 	return matched
 }
 
-func extractNumberAsToken(str string, startIdx int) (ValueToken, int, error) {
-	var token ValueToken
+func mustExtractNumberAsToken(str string, startIdx int) (ValueToken, int) {
 	re := regexp.MustCompile(`\d+(\.\d+)?`)
 	loc := re.FindStringSubmatchIndex(str[startIdx:])
+	if loc == nil {
+		m := fmt.Sprintf(
+			"loc must not be nil: loc: re.FindStringSubmatchIndex(%q)",
+			str[startIdx:],
+		)
+		panic(m)
+	}
+
+	var token ValueToken
+	endIdx := startIdx + loc[1]
+	numStr := str[startIdx:endIdx]
 	// 小数点以降のマッチはloc[2]からloc[3]
 	// loc[2] == -1 ならマッチしていないことになる
 	if loc[2] == -1 /*整数なら*/ {
-		value, err := strconv.Atoi(str[startIdx : startIdx+loc[1]])
+		value, err := strconv.Atoi(numStr)
 		if err != nil {
-			// errorを埋め込みたくないため%v
-			return ValueToken{}, 0, fmt.Errorf("internal error: %v", err)
+			m := fmt.Sprintf("value: strconv.Atoi(%q): ", numStr) + err.Error()
+			panic(m)
 		}
 		token = ValueToken{
 			tokenType: Int,
 			value:     value,
 		}
 	} else /*floatなら*/ {
-		value, err := strconv.ParseFloat(str[startIdx:startIdx+loc[1]], 64)
+		value, err := strconv.ParseFloat(numStr, 64)
 		if err != nil {
-			// errorを埋め込みたくないため%v
-			return ValueToken{}, 0, fmt.Errorf("internal error: %v", err)
+			m := fmt.Sprintf("value: strconv.ParseFloat(%q, 64): ", numStr) +
+				err.Error()
+			panic(m)
 		}
 		token = ValueToken{
 			tokenType: Float,
 			value:     value,
 		}
 	}
-	return token, startIdx + loc[1], nil
+	return token, endIdx
 }
 
 func mayBeBool(str string, i int) bool {
@@ -173,7 +184,11 @@ func mustExtractMark(str string, startIdx int) (MarkToken, int) {
 	re := regexp.MustCompile(`[,:\[\]{}]`)
 	mark := re.FindString(str[startIdx:])
 	if mark == "" {
-		panic("it should be called in case isMark() is true")
+		m := fmt.Sprintf(
+			"mark must not be empty: mark: re.FindString(%q)",
+			str[startIdx:],
+		)
+		panic(m)
 	}
 	endIdx := startIdx + 1 // markは1文字
 	switch mark {
@@ -190,7 +205,7 @@ func mustExtractMark(str string, startIdx int) (MarkToken, int) {
 	case "}":
 		return MarkToken{tokenType: RightCurlyBracket}, endIdx
 	default:
-		panic("out of range, mark must match one of ,:[]{}")
+		panic("out of range: mark must match one of ,:[]{} : mark: " + mark)
 	}
 }
 
@@ -222,10 +237,7 @@ func Analyze(d []byte) ([]Tokener, error) {
 			res = append(res, token)
 			i = endIdx - 1
 		case isNumber(inputStr, i):
-			token, endIdx, err := extractNumberAsToken(inputStr, i)
-			if err != nil {
-				return nil, err
-			}
+			token, endIdx := mustExtractNumberAsToken(inputStr, i)
 			res = append(res, token)
 			i = endIdx - 1
 		case mayBeBool(inputStr, i):
