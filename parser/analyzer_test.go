@@ -265,3 +265,63 @@ func TestMarkAnalyzer(t *testing.T) {
 	}
 	runTestCases(t, tests)
 }
+
+func TestJson(t *testing.T) {
+	tests := []testCase{
+		{
+			"jsonの例",
+			`
+			{
+				"title": "go",
+				"published": true,
+				"year": 2025,
+				"rate": 0.1,
+				"authors": [ "ab", "a=b", "\"quotation gg\"" ],
+				"desc": "This book is written about go language.\nBy gophers."
+			}
+			`,
+			nil,
+			[]parser.Tokener{
+				parser.NewMarkToken(parser.LeftCurlyBracket),
+
+				strToken(t, "title"),
+				parser.NewMarkToken(parser.Colon),
+				strToken(t, "go"),
+				parser.NewMarkToken(parser.Comma),
+
+				strToken(t, "published"),
+				parser.NewMarkToken(parser.Colon),
+				boolToken(t, true),
+				parser.NewMarkToken(parser.Comma),
+
+				strToken(t, "year"),
+				parser.NewMarkToken(parser.Colon),
+				intToken(t, 2025),
+				parser.NewMarkToken(parser.Comma),
+
+				strToken(t, "rate"),
+				parser.NewMarkToken(parser.Colon),
+				floatToken(t, 0.1),
+				parser.NewMarkToken(parser.Comma),
+
+				strToken(t, "authors"),
+				parser.NewMarkToken(parser.Colon),
+				parser.NewMarkToken(parser.LeftSquareBracket),
+				strToken(t, "ab"),
+				parser.NewMarkToken(parser.Comma),
+				strToken(t, "a=b"),
+				parser.NewMarkToken(parser.Comma),
+				strToken(t, "\"quotation gg\""),
+				parser.NewMarkToken(parser.RightSquareBracket),
+				parser.NewMarkToken(parser.Comma),
+
+				strToken(t, "desc"),
+				parser.NewMarkToken(parser.Colon),
+				strToken(t, "This book is written about go language.\nBy gophers."),
+
+				parser.NewMarkToken(parser.RightCurlyBracket),
+			},
+		},
+	}
+	runTestCases(t, tests)
+}
