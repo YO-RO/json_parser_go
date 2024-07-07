@@ -83,6 +83,12 @@ func TestBoolAnalyzer(t *testing.T) {
 			parser.ErrUndefinedSymbol,
 			nil,
 		},
+		{
+			"定義されていないキーワード[true111]",
+			"true111",
+			parser.ErrUndefinedSymbol,
+			nil,
+		},
 	}
 	runTestCases(t, tests)
 }
