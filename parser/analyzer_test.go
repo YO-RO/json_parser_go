@@ -189,3 +189,70 @@ func TestStringAnalyzer(t *testing.T) {
 	}
 	runTestCases(t, tests)
 }
+
+func TestMarkAnalyzer(t *testing.T) {
+	tests := []testCase{
+		{
+			"コンマ",
+			`,`,
+			nil,
+			[]parser.Tokener{
+				parser.NewMarkToken(parser.Comma),
+			},
+		},
+		{
+			"コロン",
+			`:`,
+			nil,
+			[]parser.Tokener{
+				parser.NewMarkToken(parser.Colon),
+			},
+		},
+		{
+			"左中カッコ (left square bracket)",
+			`[`,
+			nil,
+			[]parser.Tokener{
+				parser.NewMarkToken(parser.LeftSquareBracket),
+			},
+		},
+		{
+			"右中カッコ (right square bracket)",
+			`]`,
+			nil,
+			[]parser.Tokener{
+				parser.NewMarkToken(parser.RightSquareBracket),
+			},
+		},
+		{
+			"左大カッコ (left curly bracket)",
+			`{`,
+			nil,
+			[]parser.Tokener{
+				parser.NewMarkToken(parser.LeftCurlyBracket),
+			},
+		},
+		{
+			"右大カッコ (right curly bracket)",
+			`}`,
+			nil,
+			[]parser.Tokener{
+				parser.NewMarkToken(parser.RightCurlyBracket),
+			},
+		},
+		{
+			"複数の記号",
+			`{[:,]}`,
+			nil,
+			[]parser.Tokener{
+				parser.NewMarkToken(parser.LeftCurlyBracket),
+				parser.NewMarkToken(parser.LeftSquareBracket),
+				parser.NewMarkToken(parser.Colon),
+				parser.NewMarkToken(parser.Comma),
+				parser.NewMarkToken(parser.RightSquareBracket),
+				parser.NewMarkToken(parser.RightCurlyBracket),
+			},
+		},
+	}
+	runTestCases(t, tests)
+}
