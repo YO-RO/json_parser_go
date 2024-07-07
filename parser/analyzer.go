@@ -82,13 +82,13 @@ func extractStringAsToken(str string, startIdx int) (ValueToken, int, error) {
 	// 直前に\がない"
 	// または 直前に\が偶数回連続している"
 	// `"`や`\\"`などがマッチ
-	re := regexp.MustCompile(`(?:^|[^\\]|((^|[^\\])(\\\\)+))(")`)
+	re := regexp.MustCompile(`(?:^|[^\\]|(?:(?:^|[^\\])(?:\\\\)+))(")`)
 	loc := re.FindStringSubmatchIndex(str[startIdx+1:])
 	if loc == nil {
 		return ValueToken{}, 0, ErrSyntax
 	}
 	// idxsはstr[firstQuotationIdx+1]からのインデックスであるためfirstQuotationIdx+1を足す
-	endIdx := startIdx + 1 + loc[1]
+	endIdx := startIdx + 1 + loc[3]
 
 	value, err := strconv.Unquote(str[startIdx:endIdx])
 	if err != nil {
@@ -152,14 +152,13 @@ func mayBeBool(str string, i int) bool {
 }
 
 func extractBoolAsToken(str string, startIdx int) (ValueToken, int, error) {
-	// ?i: はcase insentive
 	// ?: はグループをキャプチャしない
-	re := regexp.MustCompile(`(?i:true|false)(?:[\s,:"{}\[\]]|$)`)
+	re := regexp.MustCompile(`(true|false)(?:[\s,:"{}\[\]]|$)`)
 	loc := re.FindStringSubmatchIndex(str[startIdx:])
 	if loc == nil {
 		return ValueToken{}, 0, ErrUndefinedSymbol
 	}
-	endIdx := startIdx + loc[1]
+	endIdx := startIdx + loc[3]
 
 	var value bool
 	if str[startIdx:endIdx] == "true" {

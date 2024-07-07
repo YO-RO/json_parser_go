@@ -66,6 +66,15 @@ func TestBoolAnalyzer(t *testing.T) {
 			[]parser.Tokener{boolToken(t, false)},
 		},
 		{
+			"真(連続して記号が来る場合)",
+			"true,",
+			nil,
+			[]parser.Tokener{
+				boolToken(t, true),
+				parser.NewMarkToken(parser.Comma),
+			},
+		},
+		{
 			"定義されていないキーワード[trueeeee]",
 			"trueeeee",
 			parser.ErrUndefinedSymbol,
