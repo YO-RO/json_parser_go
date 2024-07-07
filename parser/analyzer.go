@@ -152,14 +152,13 @@ func mayBeBool(str string, i int) bool {
 }
 
 func extractBoolAsToken(str string, startIdx int) (ValueToken, int, error) {
-	// ?i: はcase insentive
 	// ?: はグループをキャプチャしない
-	re := regexp.MustCompile(`(?i:true|false)(?:[\s,:"{}\[\]]|$)`)
+	re := regexp.MustCompile(`(true|false)(?:[\s,:"{}\[\]]|$)`)
 	loc := re.FindStringSubmatchIndex(str[startIdx:])
 	if loc == nil {
 		return ValueToken{}, 0, ErrUndefinedSymbol
 	}
-	endIdx := startIdx + loc[1]
+	endIdx := startIdx + loc[3]
 
 	var value bool
 	if str[startIdx:endIdx] == "true" {
