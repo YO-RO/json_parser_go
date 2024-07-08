@@ -5,11 +5,11 @@ import (
 	"strconv"
 )
 
-func mayBeString(str string, i int) bool {
-	return str[i] == '"'
-}
-
 func extractStringAsToken(str string, startIdx int) (Token, int, error) {
+	if str[startIdx] != '"' {
+		return Token{}, 0, errNoMatch
+	}
+
 	re := regexp.MustCompile(`^"[^\\]*?(\\.[^\\]*?)*?"`)
 	loc := re.FindStringIndex(str[startIdx:])
 	if loc == nil {

@@ -7,16 +7,11 @@ import (
 	"strconv"
 )
 
-func mayBeNumber(str string, i int) bool {
-	matched, _ := regexp.MatchString(`-|\d`, str[i:i+1])
-	return matched
-}
-
 func extractNumberAsToken(str string, startIdx int) (Token, int, error) {
 	re := regexp.MustCompile(`^-?(0|[1-9]\d*)(\.\d+)?(e[+-]?\d+)?`)
 	loc := re.FindStringSubmatchIndex(str[startIdx:])
 	if loc == nil {
-		return Token{}, 0, ErrUndefinedSymbol
+		return Token{}, 0, errNoMatch
 	}
 	endIdx := startIdx + loc[1]
 	numStr := str[startIdx:endIdx]

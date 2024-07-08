@@ -2,15 +2,11 @@ package analyzer
 
 import "regexp"
 
-func mayBeBool(str string, i int) bool {
-	return str[i] == 't' || str[i] == 'f'
-}
-
 func extractBoolAsToken(str string, startIdx int) (Token, int, error) {
 	re := regexp.MustCompile(`^(true|false)\b`)
 	loc := re.FindStringIndex(str[startIdx:])
 	if loc == nil {
-		return Token{}, 0, ErrUndefinedSymbol
+		return Token{}, 0, errNoMatch
 	}
 	endIdx := startIdx + loc[1]
 

@@ -1,39 +1,29 @@
 package analyzer
 
 import (
-	"fmt"
 	"regexp"
 )
 
-func isMark(str string, i int) bool {
-	matched, _ := regexp.MatchString(`[,:\[\]{}]`, str[i:i+1])
-	return matched
-}
-
-func mustExtractMark(str string, startIdx int) (Token, int) {
+func extractMarkAsToken(str string, startIdx int) (Token, int, error) {
 	re := regexp.MustCompile(`^[,:\[\]{}]`)
 	mark := re.FindString(str[startIdx:])
 	if mark == "" {
-		m := fmt.Sprintf(
-			"mark must not be empty: mark: re.FindString(%q)",
-			str[startIdx:],
-		)
-		panic(m)
+		return Token{}, 0, errNoMatch
 	}
 	endIdx := startIdx + 1 // markは1文字
 	switch mark {
 	case ",":
-		return Token{Type: Comma, Value: `,`}, endIdx
+		return Token{Type: Comma, Value: `,`}, endIdx, nil
 	case ":":
-		return Token{Type: Colon, Value: `:`}, endIdx
+		return Token{Type: Colon, Value: `:`}, endIdx, nil
 	case "[":
-		return Token{Type: LeftSquareBracket, Value: `[`}, endIdx
+		return Token{Type: LeftSquareBracket, Value: `[`}, endIdx, nil
 	case "]":
-		return Token{Type: RightSquareBracket, Value: `]`}, endIdx
+		return Token{Type: RightSquareBracket, Value: `]`}, endIdx, nil
 	case "{":
-		return Token{Type: LeftCurlyBracket, Value: `{`}, endIdx
+		return Token{Type: LeftCurlyBracket, Value: `{`}, endIdx, nil
 	case "}":
-		return Token{Type: RightCurlyBracket, Value: `}`}, endIdx
+		return Token{Type: RightCurlyBracket, Value: `}`}, endIdx, nil
 	default:
 		panic("out of range: mark must match one of ,:[]{} : mark: " + mark)
 	}

@@ -27,67 +27,57 @@ type Token struct {
 	Value any
 }
 
+type extractTokenFunc func(string, int) (Token, int, error)
+
 var (
 	ErrSyntax          error = errors.New("invalid syntax")
 	ErrUndefinedSymbol error = errors.New("undefined symbol")
+
+	errNoMatch error = errors.New("no match")
 )
 
-func isSpace(str string, i int) bool {
-	matched, _ := regexp.MatchString(`\s`, str[i:i+1])
-	return matched
-}
-
-func skipSpaces(str string, startIdx int) int {
-	re := regexp.MustCompile(`\s+`)
+func skipSpaces(str string, startIdx int) (int, bool) {
+	re := regexp.MustCompile(`^\s+`)
 	loc := re.FindStringIndex(str[startIdx:])
 	if loc == nil {
-		return startIdx
+		return 0, false
 	}
-	return startIdx + loc[1]
+	return startIdx + loc[1], true
 }
 
 func Analyze(d []byte) ([]Token, error) {
 	res := []Token{}
-
 	inputStr := string(d)
-	for i := 0; i < len(inputStr); i++ {
-		switch {
-		case mayBeString(inputStr, i):
-			token, endIdx, err := extractStringAsToken(inputStr, i)
+
+	extractTokenFuncs := []extractTokenFunc{
+		extractStringAsToken,
+		extractNumberAsToken,
+		extractBoolAsToken,
+		extractMarkAsToken,
+		extractNullAsToken,
+	}
+	for i := 0; i < len(inputStr); {
+		endIdx, skip := skipSpaces(inputStr, i)
+		if skip {
+			i = endIdx
+			continue
+		}
+
+		matched := false
+		for _, extract := range extractTokenFuncs {
+			token, endIdx, err := extract(inputStr, i)
 			if err != nil {
+				if errors.Is(errNoMatch, err) {
+					continue
+				}
 				return nil, err
 			}
+			matched = true
 			res = append(res, token)
-			i = endIdx - 1
-		case mayBeNumber(inputStr, i):
-			token, endIdx, err := extractNumberAsToken(inputStr, i)
-			if err != nil {
-				return nil, err
-			}
-			res = append(res, token)
-			i = endIdx - 1
-		case mayBeBool(inputStr, i):
-			token, endIdx, err := extractBoolAsToken(inputStr, i)
-			if err != nil {
-				return nil, err
-			}
-			res = append(res, token)
-			i = endIdx - 1
-		case isMark(inputStr, i):
-			token, endIdx := mustExtractMark(inputStr, i)
-			res = append(res, token)
-			i = endIdx - 1
-		case mayBeNull(inputStr, i):
-			token, endIdx, err := extractNullAsToken(inputStr, i)
-			if err != nil {
-				return nil, err
-			}
-			res = append(res, token)
-			i = endIdx - 1
-		case isSpace(inputStr, i):
-			endIdx := skipSpaces(inputStr, i)
-			i = endIdx - 1
-		default:
+			i = endIdx
+			break
+		}
+		if !matched {
 			return nil, ErrUndefinedSymbol
 		}
 	}
