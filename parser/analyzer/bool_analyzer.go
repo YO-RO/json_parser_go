@@ -7,13 +7,12 @@ func mayBeBool(str string, i int) bool {
 }
 
 func extractBoolAsToken(str string, startIdx int) (ValueToken, int, error) {
-	// ?: はグループをキャプチャしない
-	re := regexp.MustCompile(`(true|false)(?:[\s,:"{}\[\]]|$)`)
-	loc := re.FindStringSubmatchIndex(str[startIdx:])
+	re := regexp.MustCompile(`^(true|false)\b`)
+	loc := re.FindStringIndex(str[startIdx:])
 	if loc == nil {
 		return ValueToken{}, 0, ErrUndefinedSymbol
 	}
-	endIdx := startIdx + loc[3]
+	endIdx := startIdx + loc[1]
 
 	var value bool
 	if str[startIdx:endIdx] == "true" {

@@ -12,7 +12,7 @@ func isNumber(str string, i int) bool {
 }
 
 func mustExtractNumberAsToken(str string, startIdx int) (ValueToken, int) {
-	re := regexp.MustCompile(`\d+(\.\d+)?`)
+	re := regexp.MustCompile(`^\d+(\.\d+)?`)
 	loc := re.FindStringSubmatchIndex(str[startIdx:])
 	if loc == nil {
 		m := fmt.Sprintf(

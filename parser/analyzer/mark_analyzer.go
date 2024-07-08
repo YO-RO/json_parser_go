@@ -11,7 +11,7 @@ func isMark(str string, i int) bool {
 }
 
 func mustExtractMark(str string, startIdx int) (MarkToken, int) {
-	re := regexp.MustCompile(`[,:\[\]{}]`)
+	re := regexp.MustCompile(`^[,:\[\]{}]`)
 	mark := re.FindString(str[startIdx:])
 	if mark == "" {
 		m := fmt.Sprintf(
