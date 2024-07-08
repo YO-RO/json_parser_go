@@ -51,6 +51,35 @@ func boolToken(t *testing.T, value bool) analyzer.ValueToken {
 	return analyzer.NewValueToken(analyzer.Bool, value)
 }
 
+func nullToken(t *testing.T) analyzer.ValueToken {
+	t.Helper()
+	return analyzer.NewValueToken(analyzer.Null, nil)
+}
+
+func TestNullAnalyzer(t *testing.T) {
+	tests := []testCase{
+		{
+			"null",
+			"null",
+			nil,
+			[]analyzer.Tokener{nullToken(t)},
+		},
+		{
+			"nullでない文字[nulll]",
+			"nulll",
+			analyzer.ErrUndefinedSymbol,
+			nil,
+		},
+		{
+			"nullでない文字[nnull]",
+			"nnull",
+			analyzer.ErrUndefinedSymbol,
+			nil,
+		},
+	}
+	runTestCases(t, tests)
+}
+
 func TestBoolAnalyzer(t *testing.T) {
 	tests := []testCase{
 		{
