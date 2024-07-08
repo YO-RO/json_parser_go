@@ -134,6 +134,12 @@ func TestBoolAnalyzer(t *testing.T) {
 func TestIntAnalyzer(t *testing.T) {
 	tests := []testCase{
 		{
+			"ゼロ",
+			"0",
+			nil,
+			[]analyzer.Tokener{intToken(t, 0)},
+		},
+		{
 			"一つの整数",
 			"123",
 			nil,
@@ -148,6 +154,24 @@ func TestIntAnalyzer(t *testing.T) {
 				intToken(t, 456),
 				intToken(t, 789),
 			},
+		},
+		{
+			"負の値",
+			"-15",
+			nil,
+			[]analyzer.Tokener{intToken(t, -15)},
+		},
+		{
+			"指数表現(符号なし)",
+			"1e10",
+			nil,
+			[]analyzer.Tokener{intToken(t, 1e10)},
+		},
+		{
+			"指数表現(符号あり)",
+			"1e+10",
+			nil,
+			[]analyzer.Tokener{intToken(t, 1e+10)},
 		},
 	}
 	runTestCases(t, tests)
@@ -170,6 +194,24 @@ func TestFloatAnalyzer(t *testing.T) {
 				floatToken(t, 56.78),
 				floatToken(t, 90.12),
 			},
+		},
+		{
+			"ゼロ点",
+			"0.1",
+			nil,
+			[]analyzer.Tokener{floatToken(t, 0.1)},
+		},
+		{
+			"-ゼロ点",
+			"-0.1",
+			nil,
+			[]analyzer.Tokener{floatToken(t, -0.1)},
+		},
+		{
+			"負の値",
+			"-15.6",
+			nil,
+			[]analyzer.Tokener{floatToken(t, -15.6)},
 		},
 	}
 	runTestCases(t, tests)
