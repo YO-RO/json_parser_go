@@ -12,6 +12,7 @@ const (
 	Int
 	Float
 	Bool
+	Null
 
 	LeftSquareBracket
 	RightSquareBracket
@@ -112,6 +113,13 @@ func Analyze(d []byte) ([]Tokener, error) {
 			i = endIdx - 1
 		case isMark(inputStr, i):
 			token, endIdx := mustExtractMark(inputStr, i)
+			res = append(res, token)
+			i = endIdx - 1
+		case mayBeNull(inputStr, i):
+			token, endIdx, err := extractNullAsToken(inputStr, i)
+			if err != nil {
+				return nil, err
+			}
 			res = append(res, token)
 			i = endIdx - 1
 		case isSpace(inputStr, i):
