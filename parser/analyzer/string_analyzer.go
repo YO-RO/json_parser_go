@@ -9,21 +9,21 @@ func mayBeString(str string, i int) bool {
 	return str[i] == '"'
 }
 
-func extractStringAsToken(str string, startIdx int) (ValueToken, int, error) {
+func extractStringAsToken(str string, startIdx int) (Token, int, error) {
 	re := regexp.MustCompile(`^"[^\\]*?(\\.[^\\]*?)*?"`)
 	loc := re.FindStringIndex(str[startIdx:])
 	if loc == nil {
-		return ValueToken{}, 0, ErrSyntax
+		return Token{}, 0, ErrSyntax
 	}
 	endIdx := startIdx + loc[1]
 
 	value, err := strconv.Unquote(str[startIdx:endIdx])
 	if err != nil {
-		return ValueToken{}, 0, ErrSyntax
+		return Token{}, 0, ErrSyntax
 	}
-	token := ValueToken{
-		tokenType: String,
-		value:     value,
+	token := Token{
+		Type:  String,
+		Value: value,
 	}
 	return token, endIdx, nil
 }

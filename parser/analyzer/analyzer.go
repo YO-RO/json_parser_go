@@ -22,50 +22,9 @@ const (
 	Comma
 )
 
-var (
-	ErrNoValue error = errors.New("no value")
-)
-
-// TokenはValueTokenとMarkToken
-type Tokener interface {
-	TokenType() TokenType
-	Value() (any, error)
-}
-
-type ValueToken struct {
-	tokenType TokenType
-	value     any
-}
-
-func NewValueToken(tokenType TokenType, value any) ValueToken {
-	return ValueToken{
-		tokenType: tokenType,
-		value:     value,
-	}
-}
-
-func (vt ValueToken) TokenType() TokenType {
-	return vt.tokenType
-}
-
-func (vt ValueToken) Value() (any, error) {
-	return vt.value, nil
-}
-
-type MarkToken struct {
-	tokenType TokenType
-}
-
-func NewMarkToken(tokenType TokenType) MarkToken {
-	return MarkToken{tokenType: tokenType}
-}
-
-func (mt MarkToken) TokenType() TokenType {
-	return mt.tokenType
-}
-
-func (mt MarkToken) Value() (any, error) {
-	return nil, ErrNoValue
+type Token struct {
+	Type  TokenType
+	Value any
 }
 
 var (
@@ -87,8 +46,8 @@ func skipSpaces(str string, startIdx int) int {
 	return startIdx + loc[1]
 }
 
-func Analyze(d []byte) ([]Tokener, error) {
-	res := []Tokener{}
+func Analyze(d []byte) ([]Token, error) {
+	res := []Token{}
 
 	inputStr := string(d)
 	for i := 0; i < len(inputStr); i++ {

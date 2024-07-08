@@ -12,7 +12,7 @@ type testCase struct {
 	name      string
 	input     string
 	expectErr error
-	want      []analyzer.Tokener
+	want      []analyzer.Token
 }
 
 func runTestCases(t *testing.T, tests []testCase) {
@@ -31,29 +31,64 @@ func runTestCases(t *testing.T, tests []testCase) {
 
 }
 
-func intToken(t *testing.T, value int) analyzer.ValueToken {
+func intToken(t *testing.T, value int) analyzer.Token {
 	t.Helper()
-	return analyzer.NewValueToken(analyzer.Int, value)
+	return analyzer.Token{
+		Type:  analyzer.Int,
+		Value: value,
+	}
 }
 
-func floatToken(t *testing.T, value float64) analyzer.ValueToken {
+func floatToken(t *testing.T, value float64) analyzer.Token {
 	t.Helper()
-	return analyzer.NewValueToken(analyzer.Float, value)
+	return analyzer.Token{
+		Type:  analyzer.Float,
+		Value: value,
+	}
 }
 
-func strToken(t *testing.T, value string) analyzer.ValueToken {
+func strToken(t *testing.T, value string) analyzer.Token {
 	t.Helper()
-	return analyzer.NewValueToken(analyzer.String, value)
+	return analyzer.Token{
+		Type:  analyzer.String,
+		Value: value,
+	}
 }
 
-func boolToken(t *testing.T, value bool) analyzer.ValueToken {
+func boolToken(t *testing.T, value bool) analyzer.Token {
 	t.Helper()
-	return analyzer.NewValueToken(analyzer.Bool, value)
+	return analyzer.Token{
+		Type:  analyzer.Bool,
+		Value: value,
+	}
 }
 
-func nullToken(t *testing.T) analyzer.ValueToken {
+func nullToken(t *testing.T) analyzer.Token {
 	t.Helper()
-	return analyzer.NewValueToken(analyzer.Null, nil)
+	return analyzer.Token{
+		Type:  analyzer.Null,
+		Value: nil,
+	}
+}
+
+func markToken(t *testing.T, value string) analyzer.Token {
+	t.Helper()
+	switch value {
+	case `[`:
+		return analyzer.Token{Type: analyzer.LeftSquareBracket, Value: `[`}
+	case `]`:
+		return analyzer.Token{Type: analyzer.RightSquareBracket, Value: `]`}
+	case `{`:
+		return analyzer.Token{Type: analyzer.LeftCurlyBracket, Value: `{`}
+	case `}`:
+		return analyzer.Token{Type: analyzer.RightCurlyBracket, Value: `}`}
+	case `:`:
+		return analyzer.Token{Type: analyzer.Colon, Value: `:`}
+	case `,`:
+		return analyzer.Token{Type: analyzer.Comma, Value: `,`}
+	default:
+		return analyzer.Token{}
+	}
 }
 
 func TestNullAnalyzer(t *testing.T) {
@@ -62,7 +97,7 @@ func TestNullAnalyzer(t *testing.T) {
 			"null",
 			"null",
 			nil,
-			[]analyzer.Tokener{nullToken(t)},
+			[]analyzer.Token{nullToken(t)},
 		},
 		{
 			"nullでない文字[nulll]",
@@ -86,21 +121,21 @@ func TestBoolAnalyzer(t *testing.T) {
 			"真",
 			"true",
 			nil,
-			[]analyzer.Tokener{boolToken(t, true)},
+			[]analyzer.Token{boolToken(t, true)},
 		},
 		{
 			"偽",
 			"false",
 			nil,
-			[]analyzer.Tokener{boolToken(t, false)},
+			[]analyzer.Token{boolToken(t, false)},
 		},
 		{
 			"真(連続して記号が来る場合)",
 			"true,",
 			nil,
-			[]analyzer.Tokener{
+			[]analyzer.Token{
 				boolToken(t, true),
-				analyzer.NewMarkToken(analyzer.Comma),
+				markToken(t, `,`),
 			},
 		},
 		{
@@ -137,19 +172,19 @@ func TestIntAnalyzer(t *testing.T) {
 			"ゼロ",
 			"0",
 			nil,
-			[]analyzer.Tokener{intToken(t, 0)},
+			[]analyzer.Token{intToken(t, 0)},
 		},
 		{
 			"一つの整数",
 			"123",
 			nil,
-			[]analyzer.Tokener{intToken(t, 123)},
+			[]analyzer.Token{intToken(t, 123)},
 		},
 		{
 			"複数の整数",
 			"123 456 789",
 			nil,
-			[]analyzer.Tokener{
+			[]analyzer.Token{
 				intToken(t, 123),
 				intToken(t, 456),
 				intToken(t, 789),
@@ -159,19 +194,19 @@ func TestIntAnalyzer(t *testing.T) {
 			"負の値",
 			"-15",
 			nil,
-			[]analyzer.Tokener{intToken(t, -15)},
+			[]analyzer.Token{intToken(t, -15)},
 		},
 		{
 			"指数表現(符号なし)",
 			"1e10",
 			nil,
-			[]analyzer.Tokener{intToken(t, 1e10)},
+			[]analyzer.Token{intToken(t, 1e10)},
 		},
 		{
 			"指数表現(符号あり)",
 			"1e+10",
 			nil,
-			[]analyzer.Tokener{intToken(t, 1e+10)},
+			[]analyzer.Token{intToken(t, 1e+10)},
 		},
 	}
 	runTestCases(t, tests)
@@ -183,13 +218,13 @@ func TestFloatAnalyzer(t *testing.T) {
 			"一つのfloat",
 			"12.34",
 			nil,
-			[]analyzer.Tokener{floatToken(t, 12.34)},
+			[]analyzer.Token{floatToken(t, 12.34)},
 		},
 		{
 			"複数のfloat",
 			"12.34 56.78 90.12",
 			nil,
-			[]analyzer.Tokener{
+			[]analyzer.Token{
 				floatToken(t, 12.34),
 				floatToken(t, 56.78),
 				floatToken(t, 90.12),
@@ -199,19 +234,19 @@ func TestFloatAnalyzer(t *testing.T) {
 			"ゼロ点",
 			"0.1",
 			nil,
-			[]analyzer.Tokener{floatToken(t, 0.1)},
+			[]analyzer.Token{floatToken(t, 0.1)},
 		},
 		{
 			"-ゼロ点",
 			"-0.1",
 			nil,
-			[]analyzer.Tokener{floatToken(t, -0.1)},
+			[]analyzer.Token{floatToken(t, -0.1)},
 		},
 		{
 			"負の値",
 			"-15.6",
 			nil,
-			[]analyzer.Tokener{floatToken(t, -15.6)},
+			[]analyzer.Token{floatToken(t, -15.6)},
 		},
 	}
 	runTestCases(t, tests)
@@ -223,7 +258,7 @@ func TestStringAnalyzer(t *testing.T) {
 			"空文字列",
 			`""`,
 			nil,
-			[]analyzer.Tokener{
+			[]analyzer.Token{
 				strToken(t, ""),
 			},
 		},
@@ -231,7 +266,7 @@ func TestStringAnalyzer(t *testing.T) {
 			"文字列",
 			`"string"`,
 			nil,
-			[]analyzer.Tokener{
+			[]analyzer.Token{
 				strToken(t, "string"),
 			},
 		},
@@ -239,7 +274,7 @@ func TestStringAnalyzer(t *testing.T) {
 			"エスケープ文字付き文字列",
 			`"\n, \\, \", \\n, \\\", \\"`,
 			nil,
-			[]analyzer.Tokener{
+			[]analyzer.Token{
 				strToken(t, "\n, \\, \", \\n, \\\", \\"),
 			},
 		},
@@ -247,7 +282,7 @@ func TestStringAnalyzer(t *testing.T) {
 			"複数の文字列",
 			`"hello""world" "foo"`,
 			nil,
-			[]analyzer.Tokener{
+			[]analyzer.Token{
 				strToken(t, "hello"),
 				strToken(t, "world"),
 				strToken(t, "foo"),
@@ -276,61 +311,61 @@ func TestMarkAnalyzer(t *testing.T) {
 			"コンマ",
 			`,`,
 			nil,
-			[]analyzer.Tokener{
-				analyzer.NewMarkToken(analyzer.Comma),
+			[]analyzer.Token{
+				markToken(t, `,`),
 			},
 		},
 		{
 			"コロン",
 			`:`,
 			nil,
-			[]analyzer.Tokener{
-				analyzer.NewMarkToken(analyzer.Colon),
+			[]analyzer.Token{
+				markToken(t, `:`),
 			},
 		},
 		{
 			"左中カッコ (left square bracket)",
 			`[`,
 			nil,
-			[]analyzer.Tokener{
-				analyzer.NewMarkToken(analyzer.LeftSquareBracket),
+			[]analyzer.Token{
+				markToken(t, `[`),
 			},
 		},
 		{
 			"右中カッコ (right square bracket)",
 			`]`,
 			nil,
-			[]analyzer.Tokener{
-				analyzer.NewMarkToken(analyzer.RightSquareBracket),
+			[]analyzer.Token{
+				markToken(t, `]`),
 			},
 		},
 		{
 			"左大カッコ (left curly bracket)",
 			`{`,
 			nil,
-			[]analyzer.Tokener{
-				analyzer.NewMarkToken(analyzer.LeftCurlyBracket),
+			[]analyzer.Token{
+				markToken(t, `{`),
 			},
 		},
 		{
 			"右大カッコ (right curly bracket)",
 			`}`,
 			nil,
-			[]analyzer.Tokener{
-				analyzer.NewMarkToken(analyzer.RightCurlyBracket),
+			[]analyzer.Token{
+				markToken(t, `}`),
 			},
 		},
 		{
 			"複数の記号",
 			`{[:,]}`,
 			nil,
-			[]analyzer.Tokener{
-				analyzer.NewMarkToken(analyzer.LeftCurlyBracket),
-				analyzer.NewMarkToken(analyzer.LeftSquareBracket),
-				analyzer.NewMarkToken(analyzer.Colon),
-				analyzer.NewMarkToken(analyzer.Comma),
-				analyzer.NewMarkToken(analyzer.RightSquareBracket),
-				analyzer.NewMarkToken(analyzer.RightCurlyBracket),
+			[]analyzer.Token{
+				markToken(t, `{`),
+				markToken(t, `[`),
+				markToken(t, `:`),
+				markToken(t, `,`),
+				markToken(t, `]`),
+				markToken(t, `}`),
 			},
 		},
 	}
@@ -352,45 +387,45 @@ func TestJson(t *testing.T) {
 			}
 			`,
 			nil,
-			[]analyzer.Tokener{
-				analyzer.NewMarkToken(analyzer.LeftCurlyBracket),
+			[]analyzer.Token{
+				analyzer.Token(markToken(t, `{`)),
 
 				strToken(t, "title"),
-				analyzer.NewMarkToken(analyzer.Colon),
+				analyzer.Token(markToken(t, `:`)),
 				strToken(t, "go"),
-				analyzer.NewMarkToken(analyzer.Comma),
+				analyzer.Token(markToken(t, `,`)),
 
 				strToken(t, "published"),
-				analyzer.NewMarkToken(analyzer.Colon),
+				analyzer.Token(markToken(t, `:`)),
 				boolToken(t, true),
-				analyzer.NewMarkToken(analyzer.Comma),
+				analyzer.Token(markToken(t, `,`)),
 
 				strToken(t, "year"),
-				analyzer.NewMarkToken(analyzer.Colon),
+				analyzer.Token(markToken(t, `:`)),
 				intToken(t, 2025),
-				analyzer.NewMarkToken(analyzer.Comma),
+				analyzer.Token(markToken(t, `,`)),
 
 				strToken(t, "rate"),
-				analyzer.NewMarkToken(analyzer.Colon),
+				analyzer.Token(markToken(t, `:`)),
 				floatToken(t, 0.1),
-				analyzer.NewMarkToken(analyzer.Comma),
+				analyzer.Token(markToken(t, `,`)),
 
 				strToken(t, "authors"),
-				analyzer.NewMarkToken(analyzer.Colon),
-				analyzer.NewMarkToken(analyzer.LeftSquareBracket),
+				analyzer.Token(markToken(t, `:`)),
+				analyzer.Token(markToken(t, `[`)),
 				strToken(t, "ab"),
-				analyzer.NewMarkToken(analyzer.Comma),
+				analyzer.Token(markToken(t, `,`)),
 				strToken(t, "a=b"),
-				analyzer.NewMarkToken(analyzer.Comma),
+				analyzer.Token(markToken(t, `,`)),
 				strToken(t, "\"quotation gg\""),
-				analyzer.NewMarkToken(analyzer.RightSquareBracket),
-				analyzer.NewMarkToken(analyzer.Comma),
+				analyzer.Token(markToken(t, `]`)),
+				analyzer.Token(markToken(t, `,`)),
 
 				strToken(t, "desc"),
-				analyzer.NewMarkToken(analyzer.Colon),
+				analyzer.Token(markToken(t, `:`)),
 				strToken(t, "This book is written about go language.\nBy gophers."),
 
-				analyzer.NewMarkToken(analyzer.RightCurlyBracket),
+				analyzer.Token(markToken(t, `}`)),
 			},
 		},
 	}

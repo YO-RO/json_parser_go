@@ -12,11 +12,11 @@ func mayBeNumber(str string, i int) bool {
 	return matched
 }
 
-func extractNumberAsToken(str string, startIdx int) (ValueToken, int, error) {
+func extractNumberAsToken(str string, startIdx int) (Token, int, error) {
 	re := regexp.MustCompile(`^-?(0|[1-9]\d*)(\.\d+)?(e[+-]?\d+)?`)
 	loc := re.FindStringSubmatchIndex(str[startIdx:])
 	if loc == nil {
-		return ValueToken{}, 0, ErrUndefinedSymbol
+		return Token{}, 0, ErrUndefinedSymbol
 	}
 	endIdx := startIdx + loc[1]
 	numStr := str[startIdx:endIdx]
@@ -29,16 +29,16 @@ func extractNumberAsToken(str string, startIdx int) (ValueToken, int, error) {
 		panic(m)
 	}
 
-	var token ValueToken
+	var token Token
 	if value == math.Round(value) {
-		token = ValueToken{
-			tokenType: Int,
-			value:     int(value),
+		token = Token{
+			Type:  Int,
+			Value: int(value),
 		}
 	} else {
-		token = ValueToken{
-			tokenType: Float,
-			value:     value,
+		token = Token{
+			Type:  Float,
+			Value: value,
 		}
 	}
 	return token, endIdx, nil

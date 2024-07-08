@@ -6,11 +6,11 @@ func mayBeBool(str string, i int) bool {
 	return str[i] == 't' || str[i] == 'f'
 }
 
-func extractBoolAsToken(str string, startIdx int) (ValueToken, int, error) {
+func extractBoolAsToken(str string, startIdx int) (Token, int, error) {
 	re := regexp.MustCompile(`^(true|false)\b`)
 	loc := re.FindStringIndex(str[startIdx:])
 	if loc == nil {
-		return ValueToken{}, 0, ErrUndefinedSymbol
+		return Token{}, 0, ErrUndefinedSymbol
 	}
 	endIdx := startIdx + loc[1]
 
@@ -21,9 +21,9 @@ func extractBoolAsToken(str string, startIdx int) (ValueToken, int, error) {
 		value = false
 	}
 
-	token := ValueToken{
-		tokenType: Bool,
-		value:     value,
+	token := Token{
+		Type:  Bool,
+		Value: value,
 	}
 	return token, endIdx, nil
 }

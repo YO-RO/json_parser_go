@@ -10,7 +10,7 @@ func isMark(str string, i int) bool {
 	return matched
 }
 
-func mustExtractMark(str string, startIdx int) (MarkToken, int) {
+func mustExtractMark(str string, startIdx int) (Token, int) {
 	re := regexp.MustCompile(`^[,:\[\]{}]`)
 	mark := re.FindString(str[startIdx:])
 	if mark == "" {
@@ -23,17 +23,17 @@ func mustExtractMark(str string, startIdx int) (MarkToken, int) {
 	endIdx := startIdx + 1 // markは1文字
 	switch mark {
 	case ",":
-		return MarkToken{tokenType: Comma}, endIdx
+		return Token{Type: Comma, Value: `,`}, endIdx
 	case ":":
-		return MarkToken{tokenType: Colon}, endIdx
+		return Token{Type: Colon, Value: `:`}, endIdx
 	case "[":
-		return MarkToken{tokenType: LeftSquareBracket}, endIdx
+		return Token{Type: LeftSquareBracket, Value: `[`}, endIdx
 	case "]":
-		return MarkToken{tokenType: RightSquareBracket}, endIdx
+		return Token{Type: RightSquareBracket, Value: `]`}, endIdx
 	case "{":
-		return MarkToken{tokenType: LeftCurlyBracket}, endIdx
+		return Token{Type: LeftCurlyBracket, Value: `{`}, endIdx
 	case "}":
-		return MarkToken{tokenType: RightCurlyBracket}, endIdx
+		return Token{Type: RightCurlyBracket, Value: `}`}, endIdx
 	default:
 		panic("out of range: mark must match one of ,:[]{} : mark: " + mark)
 	}
