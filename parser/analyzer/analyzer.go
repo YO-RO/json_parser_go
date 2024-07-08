@@ -100,8 +100,11 @@ func Analyze(d []byte) ([]Tokener, error) {
 			}
 			res = append(res, token)
 			i = endIdx - 1
-		case isNumber(inputStr, i):
-			token, endIdx := mustExtractNumberAsToken(inputStr, i)
+		case mayBeNumber(inputStr, i):
+			token, endIdx, err := extractNumberAsToken(inputStr, i)
+			if err != nil {
+				return nil, err
+			}
 			res = append(res, token)
 			i = endIdx - 1
 		case mayBeBool(inputStr, i):
