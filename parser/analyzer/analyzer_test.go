@@ -431,3 +431,15 @@ func TestJson(t *testing.T) {
 	}
 	runTestCases(t, tests)
 }
+
+func TestOther(t *testing.T) {
+	tests := []testCase{
+		{
+			"空白",
+			`  `,
+			nil,
+			[]analyzer.Token{},
+		},
+	}
+	runTestCases(t, tests)
+}

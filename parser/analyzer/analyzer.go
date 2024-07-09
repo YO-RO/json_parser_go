@@ -57,6 +57,8 @@ func Analyze(d []byte) ([]Token, error) {
 		extractNullAsToken,
 	}
 	for i := 0; i < len(inputStr); {
+		// skipする時にcontinueしないと
+		// inputStrが空白のみの時にpanic(out of range)になる
 		endIdx, skip := skipSpaces(inputStr, i)
 		if skip {
 			i = endIdx
